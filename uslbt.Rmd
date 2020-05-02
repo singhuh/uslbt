@@ -1,0 +1,641 @@
+---
+title: "Unsupervised Learning Methods"
+author: "Umesh Singh"
+date: "5/1/2020"
+output: 
+  html_document:
+    includes:
+      after_body: footer.html
+  code_folding: "hide"  
+---
+
+<center><div autosize class="content">
+<video autoplay autosize width = 100% muted loop id="myVideo">
+  <source src="v.mp4" type="video/mp4">
+</video>
+</div>
+</center>
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{css, echo=FALSE}
+pre {
+  max-height: 300px;
+  overflow-y: auto;
+}
+pre[class] {
+  max-height: 300px;
+}
+```
+
+```{css, echo=FALSE}
+.scroll-300 {
+  max-height: 300px;
+  overflow-y: auto;
+  background-color: inherit;
+}
+```
+# `Unsupervised Learning` on **Breast Tumor Biopsies** {.tabset .tabset-fade .tabset-pills}
+## Background {.tabset}
+### Data
+
+```{r data}
+library(MASS)
+data("biopsy")
+```
+<style>
+div.blue { background-color:#e6f0ff; border-radius: 2px; padding: 2px;}
+</style>
+<div class = "blue">
+The *biopsy* from *MASS* package was used for this project.
+</div>
+>Reading *biopsy* dataset from **MASS** package
+
+### Libraries
+<style>
+div.blue { background-color:#e6f0ff; border-radius: 2px; padding: 2px;}
+</style>
+<div class = "blue">
+The clustering functions (e.g., `prcomp`, `hclust`, and `kmeans`) used in this project are intrinsic to R-Base package. Other packages were needed for managing, and visualizing data and results.
+</div>
+```{r message=FALSE}
+library(readr)
+library(dplyr)
+library(ggplot2)
+library(stringr)
+library(gridExtra)
+library(grid)
+library(cluster)
+library(DT)
+library(ggplot2)
+library(plotly)
+library(gapminder)
+library(purrr)
+library(repurrrsive)  
+library(tibble)
+library(dplyr)
+library(tidyr)
+library(reshape)
+library(ggpmisc)
+library(naniar)
+library(fpc)
+library(cluster)
+library(factoextra)
+library(fpc)
+library(NbClust)
+```
+### biopsy Data Documentation
+```{r documentation}
+datatable(biopsy, filter = "top", options = list(pageLenght = 5, scrollX=T))
+```
+>Data source: ['biopsy' data documentation](https://stat.ethz.ch/R-manual/R-devel/library/MASS/html/biopsy.html)
+
+***
+> Data columns
+
+<style>
+div.blue { background-color:#e6f0ff; border-radius: 2px; padding: 2px;}
+</style>
+<div class = "blue">
+* ID: sample code number (not unique)
+* `V1`: clump thickness
+* `V2`: uniformity of cell size.
+* `V3`: uniformity of cell shape.
+* `V4`: marginal adhesion.
+* `V5`: single epithelial cell size.
+* `V6`: bare nuclei (16 values are missing).
+* `V7`: bland chromatin.
+* `V8`: normal nucleoli.
+* `V9`: mitoses.
+* `class`: "benign" or "malignant".
+</div>
+***
+
+>Data obtained from the University of Wisconsin Hospitals, Madison (Wolberg). 
+It is based on assessment of bx of breast tumours for 699 patients. Each of nine attributes V1-V9 is scored on a scale of 1 to 10. The outcome *class*  is also known i.e., *benign*/*malignant*.
+
+### Objectives
+>To cluster the biopsy samples based on features of histopathological slides into two distinct groups, that will correlate with clinical diagnosis (i.e., benign or malignant tumor).
+
+>Whether the membership of the cluster, i.e., the samples within the cluster, are distinctively benign or malignant.
+
+<style>
+div.blue { background-color:#e6f0ff; border-radius: 2px; padding: 2px;}
+</style>
+<div class = "blue">
+In clustering
+- each cluster is distinct from each other cluster
+- objects within each cluster are broadly similar to each other.
+</div>
+
+
+### Aims
+>To use several unsupervised machine learning algorithms such as **Principal Component Analysis**, **Hierarchical Clustering**, and **K-Means Clustering** for building the unsupervised machine learning model and compare their clustering accuracies based on known diagnosis of the tumors. 
+
+### Exploratory Data Analysis {.tabset}
+#### Data Dimension
+```{r}
+dim(biopsy)
+str(biopsy)
+```
+The *original data* has **699 rows and 11 columns**.
+
+#### Missingness
+```{r}
+# check if any missing values in the dat
+anyNA(biopsy)
+# Visualizing missing values for the training data
+par(mfrow=c(1,2))
+vis_miss(biopsy)
+gg_miss_var(biopsy) + theme_minimal()
+gg_miss_var(biopsy, facet = class) + theme_gray()
+# list rows of data that have missing values
+grid.table(biopsy[!complete.cases(biopsy),])
+# create a subset of complete dataset without missing values
+biopsy1 <- na.exclude(biopsy)
+dim(biopsy1)
+```
+> A total of 16 missing values; all for *V6* (i.e., *missing not at random*).
+> These observations were deleted before applying clustering algorithms.
+> The *complete data* has **683 rows and 11 columns**.
+
+#### Diagnosis (Benign/Malignant)
+```{r}
+table(biopsy$class)
+# Assigning a numeric value to pathological diagnosis based on features on the complete dataset
+diagnosis <- as.numeric(biopsy1$class == "benign")
+table(biopsy1$class)
+table(diagnosis)
+```
+> The last-column i.e., *class* specifies the specific diagnosis of the tumors. This variable will be used to assess the *accuracy* of clustering. 
+
+#### Data-Matrix
+```{r}
+biopsy2 <- as.matrix(biopsy1[, 2:10])
+str(biopsy2)
+head(biopsy2)
+row.names(biopsy2) <- biopsy1$ID
+datatable(biopsy2, filter = "top", options = list(pageLenght = 5, scrollX=T))
+#head(biopsy2)
+```
+>Creating a data matrix of the attributes (numeric). Unsupervised learning methods will be applied on this matrix.
+
+#### Boxplots of Attributes
+```{r warning=FALSE, message=FALSE, fig.align="center", fig.width=11, fig.height=6, fig.cap="Box-plots of Attributes"}
+mdata <- melt(biopsy, id=c("ID","class"))
+p <- ggplot(data = mdata, aes(x=variable, y=value)) + geom_boxplot(aes(fill=class))
+p + facet_wrap( ~ variable, scales="free")
+```
+>Malignant tumors have higher values, on the scale of 1 to 10, for all the features compared to benign tumors. 
+
+## Unsupervised Learning Methods {.tabset}
+### Principal Component Analysis {.tabset}
+<style>
+div.blue { background-color:#e6f0ff; border-radius: 2px; padding: 2px;}
+</style>
+<div class = "blue">
+*PCA is particularly useful when working with "wide" data sets.*
+*In datasets with many variables, it is often difficult to plot the data in its raw format, making it difficult to determine the trends present within the dataset. PCA enables visualization of the "shape" of the data, identifying which samples are similar to one another and which are very different. This can enable identification of groups of samples that are similar and determine which variables make one group different from another.* [DataCamp](https://www.datacamp.com/community/tutorials/pca-analysis-r)
+</div>
+
+#### Execute
+```{r}
+biopsy.pr <- prcomp(biopsy2, scale = T, center = T)
+```
+>Applying *prcomp* function (from R-Base Package) to execute principal component analysis after scaling and centering the features
+>The prinicipal components are stored as an object *biopsy.pr*.
+
+#### Summarizing Principal Components
+<style>
+div.blue { background-color:#e6f0ff; border-radius: 2px; padding: 2px;}
+</style>
+<div class = "blue">
+PCA is a type of linear transformation on a given data set that has values for a certain number of variables (coordinates) for a certain amount of spaces. This linear transformation fits this dataset to a new coordinate system in such a way that the most significant variance is found on the first coordinate, and each subsequent coordinate is orthogonal to the last and has a lesser variance. In this way, you transform a set of x correlated variables over y samples to a set of p uncorrelated principal components over the same samples.[DataCamp](https://www.datacamp.com/community/tutorials/pca-analysis-r)
+</div>
+
+```{r}
+summary(biopsy.pr)
+```
+
+
+>There are nine prinicipal comoponents of which the first component (PC1) itself explains about 65% of the variability in the data, as shown by *Proportion of Variance* = 0.65; and the first two components (PC1, PC2) explain about 74% (as shown by the *Cumulative proportion* = 0.74 under PC2) of the variability. Thus, variability explained by all nine features can be explained by values of PC1 and PC2 only (*dimensionality reduction*).
+
+#### Interpretation {.tabset}
+##### Biplot
+```{r biplot, message=FALSE, fig.align="center", fig.width=11, fig.height=6, fig.cap="Biplot of PC1 and PC2"}
+library(ggbiplot)
+biplot<- ggbiplot(biopsy.pr, pc.biplot = TRUE, scale= TRUE, obs.scale = 1, groups= diagnosis, labels = diagnosis, ellipse = TRUE, ellipse.prob = 0.9, alpha = 0.5, var.axes = TRUE, var.scale = 1, circle = TRUE)
+ggplotly(biplot)
+```
+>The correlation circle visualizes the correlation between the first two principal components and the 9 dataset features. All the 8 features (V1-V8) are aligned close together and parallel to PC1 axis. Only one feature, V9, is aligned orthogonal to others and parallel to PC2. Thus, PC1 alone explains most of the variability explained by all the 8 features (V1-V8) and combined with PC2, can explain all the variability in teh data and differentiate between **benign** and **malignant** tumors.
+
+<style>
+div.blue { background-color:#e6f0ff; border-radius: 2px; padding: 2px;}
+</style>
+<div class = "blue">
+- Features with a positive correlation are grouped together.
+- Uncorrelated feature (V9) is orthogonal to other features.
+- Features with a negative correlation will be plotted on the opposing quadrants of this plot.
+</div>
+
+##### PC: Scatterplots {.tabset}
+###### PC1 vs PC2
+```{r, message=FALSE, fig.align="center", fig.width=11, fig.height=6, fig.cap="Scatter plot observations by components 1 and 2"}
+library(tidyverse)
+plot(biopsy.pr$x[, c(1, 2)], col = (diagnosis + 1), 
+     xlab = "PC1", ylab = "PC2")
+```
+
+###### PC1 vs PC3
+```{r fig.align="center", fig.width=11, fig.height=6, fig.cap="Scatter plot observations by components 1 and 3"}
+# Repeat for components 1 and 3
+plot(biopsy.pr$x[, c(1, 3)], col = (diagnosis + 1), 
+     xlab = "PC1", ylab = "PC3")
+```
+
+###### PC2 vs PC3
+```{r fig.align="center", fig.width=11, fig.height=6, fig.cap="Scatter plot observations by components 2 and 3"}
+# Do additional data exploration of your choosing below (optional)
+plot(biopsy.pr$x[, c(2, 3)], col = (diagnosis + 1), 
+     xlab = "PC2", ylab = "PC3")
+```
+
+##### PC: Variance
+```{r fig.align="center", fig.width=11, fig.height=6, fig.cap="Variance explained by each component and cumulative variance by all components"}
+par(mfrow = c(1, 2))
+# Calculate variability of each component: pr.var
+pr.var <- biopsy.pr$sdev^2
+
+# Variance explained by each principal component: pve
+pve <- pr.var / sum(pr.var)
+
+# Plot variance explained for each principal component
+plot(pve, xlab = "Principal Component", 
+     ylab = "Proportion of Variance Explained", 
+     ylim = c(0, 1), type = "b")
+
+# Plot cumulative proportion of variance explained
+plot(cumsum(pve), xlab = "Principal Component", 
+     ylab = "Cumulative Proportion of Variance Explained", 
+     ylim = c(0, 1), type = "b")
+```
+>The first two principal component explain most of the variability in the data
+
+
+### Hierarchical Clustering {.tabset}
+#### Preprocessing {.tabset}
+##### Scale
+```{r}
+# Scale the biopsy2 data: data.scaled
+data.scaled <- scale(biopsy2)
+head(data.scaled)
+```
+>Scaling feature values before clustering process: Feature values from each row are represented as coordinates in n-dimensional space (n is the number of features) and then the distances between these coordinates are calculated. If these coordinates are not normalized, then it may lead to false results.
+[Ref: Hierarchical Clustering in R](https://www.datacamp.com/community/tutorials/hierarchical-clustering-R)
+
+##### Euclidean-Dist
+<style>
+div.blue { background-color:#e6f0ff; border-radius: 2px; padding: 2px;}
+</style>
+<div class = "blue">
+Euclidean distance is used as an input for the clustering algorithm. The proximity matrix containing the distance between each point is determined using a distance function.
+</div>
+
+```{r}
+# Calculate similarity as Euclidean distance between observations
+data.dist <- dist(data.scaled, method = "euclidean")
+```
+> Calculated (Euclidean) distance is stored as an object *data.dist*
+
+#### H-clustering Model {.tabset}
+##### Creating Model: Linkage
+```{r}
+biopsy.hclust <- hclust(data.dist, method = "complete")
+biopsy.hclust2 <- hclust(data.dist, method = "mcquitty")
+```
+> Create a hierarchical clustering model using `hclust` function and two separate methods (i.e. `complete` and `mcquitty`);  both models are stored as objects: `biopsy.hclust` and `biopsy.hclust2`
+
+***
+Details on [hclust](https://www.rdocumentation.org/packages/stats/versions/3.6.2/topics/hclust)
+
+##### Dendrogram: H-Clusters
+```{r fig.align="center", fig.width=11, fig.height=6, fig.cap="Results of hierarchical clustering"}
+plot(biopsy.hclust)
+plot(biopsy.hclust2)
+
+```
+>Cutting the height at 9 will give 2 clusters
+
+##### Dendrogram: Outlining H-Clusters
+```{r fig.align="center", fig.width=11, fig.height=6, fig.cap="Results of hierarchical clustering"}
+# Cut by number of clusters k
+plot(biopsy.hclust)
+biopsy.hclust.clusters <- cutree(biopsy.hclust, k = 2)
+rect.hclust(biopsy.hclust, k=2, border="red") 
+
+plot(biopsy.hclust2)
+biopsy.hclust2.clusters <- cutree(biopsy.hclust2, k = 2)
+rect.hclust(biopsy.hclust2, k=2, border="red") 
+```
+>Using `cutree()` on `biopsy.hclust`, assigns cluster membership to each observation. Assumed two clusters and assigned the result to a vector called `biopsy.hclust.clusters.`
+
+##### Evaluating H-Clusters {.tabset}
+###### H-Clusters vs Actual
+```{r}
+# Clusters using 'complete' method
+table(biopsy.hclust.clusters)
+thc <- table(biopsy.hclust.clusters, biopsy1$class)
+thc
+# Clusters using 'mcquitty' method
+table(biopsy.hclust2.clusters)
+thc2 <- table(biopsy.hclust2.clusters, biopsy1$class)
+thc2
+```
+>Compare cluster membership to actual diagnoses based on `complete` and `mcquitty` method of `hclust`
+
+###### Sample Errors By H-Clustering
+```{r}
+sum(apply(table(biopsy.hclust.clusters, diagnosis), 1, min))
+sum(apply(table(biopsy.hclust2.clusters, diagnosis), 1, min))
+```
+>* Count out of place observations based on cluster by summing the row minimums
+    
+<style>
+div.blue { background-color:#e6f0ff; border-radius: 2px; padding: 2px;}
+</style>
+<div class = "blue">
+Based on "complete" h-clustering method, **101** tumors do not agree with the actual diagnosis
+Based on "mcquitty" h-clustering method, **24** tumors do not agree with the actual diagnosis
+</div>
+
+###### H-Clustering Model Accuracy {.tabset}
+####### complete method
+```{r warning=FALSE}
+torg<-table(biopsy1$class)
+biop <- c("benign", "malignant")
+actual <- factor(rep(biop, times = c(torg[1], torg[2])), levels = rev(biop))
+predhc <- factor(
+        c(
+                rep(biop, times = c(thc[1], thc[2])),
+                rep(biop, times = c(thc[3], thc[4]))),               
+        levels = rev(biop))
+xtab.hclust <- table(predhc, actual)
+library(caret) 
+cmhclust <- confusionMatrix(xtab.hclust)
+cmhclust$overall['Accuracy']
+```
+>Accuracy H-Clust `complete` method is **0.85**
+
+####### mcquitty method 
+```{r warning=FALSE}
+biop <- c("benign", "malignant")
+actual <- factor(rep(biop, times = c(torg[1], torg[2])), levels = rev(biop))
+predhc2 <- factor(
+        c(
+                rep(biop, times = c(thc2[1], thc2[2])),
+                rep(biop, times = c(thc2[3], thc2[4]))),               
+        levels = rev(biop))
+xtab.hclust2 <- table(predhc2, actual)
+library(caret) 
+cmhclust2 <- confusionMatrix(xtab.hclust2)
+cmhclust2$overall['Accuracy']
+```
+>Accuracy H-Clust `mcquitty` method is **0.96**
+
+### K-Means Clustering {.tabset}
+<style>
+div.blue { background-color:#e6f0ff; border-radius: 2px; padding: 2px;}
+</style>
+<div class = "blue">
+The data are clustered by the k-means method, which aims to partition the points into k groups such that the  sum of squares from points to the assigned cluster centres is minimized.
+</div>
+
+#### Find K {.tabset}
+##### WSS
+```{r}
+# Initialize total within sum of squares error: wss
+wss <- 0
+# Look over 1 to 15 possible clusters
+for (i in 1:15) {
+  # Fit the model: km.out
+  km.out <- kmeans(biopsy2, centers = i, nstart = 20, iter.max = 50)
+  # Save the within cluster sum of squares
+  wss[i] <- km.out$tot.withinss
+}
+```
+[kmeans documentation](https://www.rdocumentation.org/packages/stats/versions/3.6.2/topics/kmeans)
+
+##### Scree Plot
+```{r}
+# Produce a scree plot
+plot(1:15, wss, type = "b", 
+     xlab = "Number of Clusters", 
+     ylab = "Within groups sum of squares")
+```
+#### Build KMeans Model 
+<style>
+div.blue { background-color:#e6f0ff; border-radius: 2px; padding: 2px;}
+</style>
+<div class = "blue">
+Fitting a k-means model to the data using 2 centers and run the k-means algorithm 20 times. The result will be stored in biopsy.km
+</div>
+```{r}
+set.seed(4)
+# Select number of clusters
+k <- 2
+biopsy.km <- kmeans(scale(biopsy2), centers = 2, nstart = 20, iter.max = 10, algorithm = c("Hartigan-Wong", "Lloyd", "Forgy", "MacQueen"), trace = FALSE)
+```
+> KM Cluster Model created using `kmeans` function while applying scaling on features, and stored as an object `biopsy.km` 
+
+#### Clusters
+<style>
+div.blue { background-color:#e6f0ff; border-radius: 2px; padding: 2px;}
+</style>
+<div class = "blue">
+The cluster membership of the biopsy.km model object is contained in its cluster component and is accessed with the $ operator.
+</div>
+
+```{r fig.align="center", fig.width=11, fig.height=6, fig.cap="Results of K-Means clustering"}
+clusplot(biopsy2, biopsy.km$cluster, main='2D representation of the Cluster solution',
+         color=TRUE, shade=TRUE, labels=2, lines=0)
+
+```
+#### Evaluating KM Clusters {.tabset}
+##### KM Clusters vs Actual
+```{r}
+table(biopsy.km$cluster)
+tkmc <- table(biopsy.km$cluster, biopsy1$class)
+tkmc
+```
+> Compare cluster membership to actual diagnoses based on K-Means clustering
+> Based on K-Means Clustering, two clusters of 453 and 230 samples are created. In the former group of 453, the actual number of benign samples are 434 and malignant samples are 19. Of the 230 samples in the second cluster, there are 10 benign samples and 220 malignant samples
+
+##### Errors in KM-Clusters
+```{r}
+sum(apply(table(biopsy.km$cluster, diagnosis), 1, min))
+```
+> Number of Counts out of place observations based on cluster by summing the row minimums
+> Based on the K-Means clustering, **29** tumors do not agree with the actual diagnosis 
+
+###### KMeans Model Accuracy
+```{r warning=FALSE}
+torg <-table(biopsy1$class)
+biop <- c("benign", "malignant")
+actual <- factor(rep(biop, times = c(torg[1], torg[2])), levels = rev(biop))
+predkm <- factor(
+        c(
+                rep(biop, times = c(tkmc[2], tkmc[1])),
+                rep(biop, times = c(tkmc[4], tkmc[3]))),               
+        levels = rev(biop))
+xtab.kmeans <- table(predkm, actual)
+library(caret) 
+cmkmeans<-confusionMatrix(xtab.kmeans)
+cmkmeans$overall['Accuracy']
+```
+> Accuracy of K-Means clustering method is 0.957
+
+### H-Clustering Using Principal Components {.tabset}
+#### Recall PCA Summary
+```{r}
+summary(biopsy.pr)
+```
+
+#### PC: HC Model
+```{r}
+biopsy.pr.hclust <- hclust(dist(biopsy.pr$x[, 1:9]), method = "complete")
+biopsy.pr.hclust2 <- hclust(dist(biopsy.pr$x[, 1:9]), method = "mcquitty")
+```
+>Create a hierarchical clustering model and stored as object `biopsy.pr.hclust`
+
+#### Cut Model
+```{r}
+biopsy.pr.hclust.clusters <- cutree(biopsy.pr.hclust, k = 2)
+biopsy.pr.hclust2.clusters <- cutree(biopsy.pr.hclust2, k = 2)
+```
+>Cut model into 2 clusters and stored as an object `biopsy.pr.hclust.clusters`
+
+#### Evaluation {.tabset}
+##### Matrix {.tabset}
+###### **complete** method
+```{r}
+# Compare to actual diagnoses
+table(biopsy.pr.hclust.clusters)
+tpc <- table(biopsy.pr.hclust.clusters, biopsy1$class)
+tpc
+sum(apply(tpc, 1, min))
+```
+104 observations were not clustered accurately using the hierarchical clustering of principal components
+
+###### **mcquitty** method
+```{r}
+# Compare to actual diagnoses
+
+table(biopsy.pr.hclust2.clusters)
+tpc2 <- table(biopsy.pr.hclust2.clusters, biopsy1$class)
+tpc2
+sum(apply(tpc2, 1, min))
+```
+24 observations were not clustered accurately using the hierarchical clustering of principal components
+
+##### Accuracy {.tabset}
+###### complete method
+```{r warning=FALSE}
+torg<-table(biopsy1$class)
+biop <- c("benign", "malignant")
+actual <- factor(rep(biop, times = c(torg[1], torg[2])), levels = rev(biop))
+predpc <- factor(
+        c(
+                rep(biop, times = c(tpc[1], tpc[2])),
+                rep(biop, times = c(tpc[3], tpc[4]))),               
+        levels = rev(biop))
+xtab.pc <- table(predpc, actual)
+library(caret) 
+cmpc<-confusionMatrix(xtab.pc)
+cmpc$overall['Accuracy']
+```
+
+###### mcquitty method
+```{r}
+torg<-table(biopsy1$class)
+biop <- c("benign", "malignant")
+actual <- factor(rep(biop, times = c(torg[1], torg[2])), levels = rev(biop))
+predpc2 <- factor(
+        c(
+                rep(biop, times = c(tpc2[1], tpc2[2])),
+                rep(biop, times = c(tpc2[3], tpc2[4]))),               
+        levels = rev(biop))
+xtab.pc2 <- table(predpc2, actual)
+library(caret) 
+cmpc2<-confusionMatrix(xtab.pc2)
+cmpc2$overall['Accuracy']
+```
+## Comparision Between Methods {.tabset}
+### External Cluster Validation
+<style>
+div.blue { background-color:#e6f0ff; border-radius: 2px; padding: 2px;}
+</style>
+<div class = "blue">
+Clustering results are evaluated based on some externally known result, such as externally provided class labels i.e., benign/malignant for this dataset.
+</div>
+```{r final}
+cluster_models <- as.data.frame(list( 
+        'K Means' = round(cmkmeans$overall, 3),
+        'H Clust complete' = round(cmhclust$overall, 3),
+        'H Clust mcquitty' = round(cmhclust2$overall, 3),
+        'Pr.Comp HClust.comp' = round(cmpc$overall, 3),
+        'Pr.Comp HClust.mcquitty' = round(cmpc2$overall, 3)
+        ))
+datatable(t(cluster_models))
+```
+<style>
+div.blue { background-color:#e6f0ff; border-radius: 2px; padding: 2px;}
+</style>
+<div class = "blue">
+* Hieracrhical Clustering model based on `mcquitty` method was the most accurate followed by K-Means clustering for clustering benign and malignant breast tumor samples.
+</div>
+
+### Internal cluster validation 
+<style>
+div.blue { background-color:#e6f0ff; border-radius: 2px; padding: 2px;}
+</style>
+<div class = "blue">
+The clustering result is evaluated based on the data clustered itself (internal information) without reference to external information. Internal validation measures reflect often the **compactness**, the **connectedness** and **separation** of the cluster partitions.
+Measures include: `Dunn Index` $(=min. separation/max. dia)$, `Average Silhouette Width`, `Separation Index`
+</div>
+```{r}
+cshc1 <- cluster.stats(data.dist, biopsy.hclust.clusters)
+cshc2<-cluster.stats(data.dist, biopsy.hclust2.clusters)
+cskm <- cluster.stats(data.dist, biopsy.km$cluster)
+
+DI<-as.data.frame(list(cshc1$dunn, cshc2$dunn, cskm$dunn))
+IntVal <- data.frame("Dunn-Index" = c(cshc1$dunn, cshc2$dunn, cskm$dunn),
+                 "Silhouette-Width" = c(cshc1$avg.silwidth, cshc2$avg.silwidth, cskm$avg.silwidth),
+                 "Separation-Index" = c(cshc1$sindex, cshc2$sindex, cskm$sindex ))
+row.names(IntVal) <- c("Hierarchical Clustering 'complete'", "Hierarchical Clustering 'mcquitty'", "K-Means")
+datatable(IntVal, style="default",  height = "auto", width = "auto")
+```
+
+## Conclusion {.tabset}
+***
+<style>
+div.blue { background-color:#e6f0ff; border-radius: 2px; padding: 2px;}
+</style>
+<div class = "blue">
+- The different methods produce different cluster memberships. 
+- The algorithms make different assumptions about how the data is generated.
+- We can choose to use one model over another based on the quality of the models' assumptions.
+- **In this case, external validation reveals that hierarchical clustering based on *mcquitty* method provides the most accurate clustering of breast tumor samples. Inaccuracies can be addressed by including additional methods of assessment including clinical judgement, biomarker assays to confirm or rule out malignant tumors or vice versa.**
+
+<center>
+
+![champion model: hierarchical clustering using `mcquitty` method](D:/STUDY/MSIS/DM/mc.png)
+
+</center>
+
+</div>
+
+
+
+
