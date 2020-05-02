@@ -7,7 +7,14 @@ output:
     includes:
       after_body: footer.html
   code_folding: "hide"  
+  
+knit: (function(input_file, encoding) {
+  out_dir <- 'docs';
+  rmarkdown::render(input_file,
+ encoding=encoding,
+ output_file=file.path(dirname(input_file), out_dir, 'index.html'))})
 ---
+
 
 <center><div autosize class="content">
 <video autoplay autosize width = 100% muted loop id="myVideo">
