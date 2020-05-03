@@ -118,8 +118,8 @@ div.blue { background-color:#e6f0ff; border-radius: 2px; padding: 2px;}
 </div>
 ***
 
->Data obtained from the University of Wisconsin Hospitals, Madison (Wolberg). 
-It is based on assessment of bx of breast tumours for 699 patients. Each of nine attributes V1-V9 is scored on a scale of 1 to 10. The outcome *class*  is also known i.e., *benign*/*malignant*.
+>Data obtained from the University of Wisconsin Hospitals, Madison (Dr. Wolberg). 
+It is based on assessment of bx of breast tumours for 699 patients. Each of nine attributes V1-V9 is scored on a scale of 1 to 10. The outcome *class*  is also known i.e., *benign* / *malignant*.
 
 ### Objectives
 >To cluster the biopsy samples based on features of histopathological slides into two distinct groups, that will correlate with clinical diagnosis (i.e., benign or malignant tumor).
@@ -162,7 +162,7 @@ grid.table(biopsy[!complete.cases(biopsy),])
 biopsy1 <- na.exclude(biopsy)
 dim(biopsy1)
 ```
-> A total of 16 missing values; all for *V6* (i.e., *missing not at random*).
+> A total of 16 missing values; all for `V6` (i.e., *missing not at random*).
 > These observations were deleted before applying clustering algorithms.
 > The *complete data* has **683 rows and 11 columns**.
 
@@ -201,7 +201,7 @@ p + facet_wrap( ~ variable, scales="free")
 div.blue { background-color:#e6f0ff; border-radius: 2px; padding: 2px;}
 </style>
 <div class = "blue">
-*PCA is particularly useful when working with "wide" data sets.*
+*Principal Component Analysis (PCA) is particularly useful when working with "wide" data sets.*
 *In datasets with many variables, it is often difficult to plot the data in its raw format, making it difficult to determine the trends present within the dataset. PCA enables visualization of the "shape" of the data, identifying which samples are similar to one another and which are very different. This can enable identification of groups of samples that are similar and determine which variables make one group different from another.* [DataCamp](https://www.datacamp.com/community/tutorials/pca-analysis-r)
 </div>
 
@@ -234,7 +234,7 @@ library(ggbiplot)
 biplot<- ggbiplot(biopsy.pr, pc.biplot = TRUE, scale= TRUE, obs.scale = 1, groups= biopsy1$class, labels = diagnosis, ellipse = TRUE, ellipse.prob = 0.9, alpha = 0.5, var.axes = TRUE, var.scale = 1, circle = TRUE)
 ggplotly(biplot)
 ```
->The correlation circle visualizes the correlation between the first two principal components and the 9 dataset features. All the 8 features (V1-V8) are aligned close together and parallel to PC1 axis. Only one feature, V9, is aligned orthogonal to others and parallel to PC2. Thus, PC1 alone explains most of the variability explained by all the 8 features (V1-V8) and combined with PC2, can explain all the variability in teh data and differentiate between **benign** and **malignant** tumors.
+>The `correlation circle` visualizes the correlation between the first two principal components and the 9 dataset features. All the 8 features (V1-V8) are aligned close together and parallel to PC1 axis. Only one feature, `V9`, is aligned orthogonal to others and parallel to PC2. Thus, `PC1` alone explains most of the variability explained by all the 8 features (`V1-V8`) and combined with `PC2`, can explain all the variability in teh data and differentiate between **benign** and **malignant** tumors.
 
 <style>
 div.blue { background-color:#e6f0ff; border-radius: 2px; padding: 2px;}
