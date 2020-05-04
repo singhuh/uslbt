@@ -662,12 +662,10 @@ div.blue { background-color:#e6f0ff; border-radius: 2px; padding: 2px;}
 - The different methods produce different cluster memberships. 
 - The algorithms make different assumptions about how the data is generated.
 - We can choose to use one model over another based on the quality of the models' assumptions.
-- **In this case, external validation reveals that hierarchical clustering based on `mcquitty` method provides the most accurate clustering of breast tumor samples. Inaccuracies can be addressed by including additional methods of assessment, including clinical judgement, and biomarker assays, to confirm or rule out malignant tumors and vice versa.**
+- **In this case, external validation reveals that hierarchical clustering based on `mcquitty` method provides the most accurate clustering of breast tumor samples. Inaccuracies can be addressed by additional methods of assessment, including clinical judgement, and biomarker assays, to confirm or rule out malignant tumors and vice versa.**
 
 <center>
-
 ![**Champion Model**: hierarchical clustering using `mcquitty` method](C:/Users/Jesus/Documents/uslbt/mc.png)
-
 </center>
 
 </div>
