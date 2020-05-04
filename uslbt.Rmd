@@ -666,7 +666,7 @@ div.blue { background-color:#e6f0ff; border-radius: 2px; padding: 2px;}
 
 <center>
 
-![champion model: hierarchical clustering using `mcquitty` method](D:/STUDY/MSIS/DM/mc.png)
+![champion model: hierarchical clustering using `mcquitty` method](C:/Users/Jesus/Documents/uslbt/mc.png)
 
 </center>
 
