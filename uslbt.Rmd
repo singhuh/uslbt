@@ -199,6 +199,9 @@ p + facet_wrap( ~ variable, scales="free")
 >Malignant tumors have higher values, on the scale of 1 to 10, for all the features compared to benign tumors. 
 
 ##### Mean Differences
+<style>
+div.blue { background-color:#e6f0ff; border-radius: 2px; padding: 2px;}
+</style><div class = "blue">As determined by the t-test, the malignant tumors have significantly higher grading on each of the features (i.e., `V1-V9`) than benign tumors.</div>
 ```{r}
 # Perform T-Test on Attributes Between Groups
 multi.tests <- function(fun = t.test, df, vars, group.var, ...) {
@@ -207,16 +210,13 @@ multi.tests <- function(fun = t.test, df, vars, group.var, ...) {
          function(var) {
            formula <- as.formula(paste(var, "~", group.var))
            fun(data = df, formula, ...)                     
-         }
-  )
-}
+         })}
 
-res.multi.t.tests <-
-  multi.tests(fun = t.test,
-              df = biopsy,
-              vars = c(names(biopsy[c(2:10)])),
-              group.var = "class",
-              var.equal = TRUE, na.rm=TRUE)
+res.multi.t.tests <-  multi.tests(fun = t.test,
+                        df = biopsy,
+                        vars = c(names(biopsy[c(2:10)])),
+                        group.var = "class",
+                        var.equal = TRUE, na.rm=TRUE)
 
 p <-data.frame(p.value = sapply(res.multi.t.tests, getElement, name = "p.value"))
 p.value <-format.pval(pv = p, digits = 2, eps = 0.001, nsmall = 3)
@@ -662,11 +662,11 @@ div.blue { background-color:#e6f0ff; border-radius: 2px; padding: 2px;}
 - The different methods produce different cluster memberships. 
 - The algorithms make different assumptions about how the data is generated.
 - We can choose to use one model over another based on the quality of the models' assumptions.
-- **In this case, external validation reveals that hierarchical clustering based on *mcquitty* method provides the most accurate clustering of breast tumor samples. Inaccuracies can be addressed by including additional methods of assessment including clinical judgement, biomarker assays to confirm or rule out malignant tumors or vice versa.**
+- **In this case, external validation reveals that hierarchical clustering based on `mcquitty` method provides the most accurate clustering of breast tumor samples. Inaccuracies can be addressed by including additional methods of assessment, including clinical judgement, and biomarker assays, to confirm or rule out malignant tumors and vice versa.**
 
 <center>
 
-![champion model: hierarchical clustering using `mcquitty` method](C:/Users/Jesus/Documents/uslbt/mc.png)
+![**Champion Model**: hierarchical clustering using `mcquitty` method](C:/Users/Jesus/Documents/uslbt/mc.png)
 
 </center>
 
