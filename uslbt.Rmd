@@ -151,13 +151,15 @@ The *original data* has **699 rows and 11 columns**.
 ```{r}
 # check if any missing values in the dat
 anyNA(biopsy)
-# Visualizing missing values for the training data
-par(mfrow=c(1,2))
-vis_miss(biopsy)
-gg_miss_var(biopsy) + theme_minimal()
-gg_miss_var(biopsy, facet = class) + theme_gray()
+
 # list rows of data that have missing values
 grid.table(biopsy[!complete.cases(biopsy),])
+
+# Visualizing missing values in the original data
+par(mfrow=c(1,3))
+vis_miss(biopsy) + theme_minimal()
+gg_miss_var(biopsy, facet = class) + theme_minimal()
+
 # create a subset of complete dataset without missing values
 biopsy1 <- na.exclude(biopsy)
 dim(biopsy1)
