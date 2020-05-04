@@ -149,7 +149,7 @@ The *original data* has **699 rows and 11 columns**.
 
 #### Missingness
 ```{r}
-# check if any missing values in the dat
+# check if any missing values in the data
 anyNA(biopsy)
 
 # list rows of data that have missing values
@@ -168,7 +168,7 @@ dim(biopsy1)
 > These observations were deleted before applying clustering algorithms.
 > The *complete data* has **683 rows and 11 columns**.
 
-#### Diagnosis (Benign/Malignant)
+#### Outcome Variable
 ```{r}
 table(biopsy$class)
 # Assigning a numeric value to pathological diagnosis based on features on the complete dataset
@@ -189,13 +189,42 @@ datatable(biopsy2, filter = "top", options = list(pageLenght = 5, scrollX=T))
 ```
 >Creating a data matrix of the attributes (numeric). Unsupervised learning methods will be applied on this matrix.
 
-#### Boxplots of Attributes
-```{r warning=FALSE, message=FALSE, fig.align="center", fig.width=11, fig.height=6, fig.cap="Box-plots of Attributes"}
+#### Comparison of Features Between Outcomes {.tabset}
+##### Boxplots
+```{r warning=FALSE, message=FALSE, fig.align="center", fig.width=11, fig.height=6, fig.cap="Box-plots of Attributes `V1-V9`"}
 mdata <- melt(biopsy, id=c("ID","class"))
 p <- ggplot(data = mdata, aes(x=variable, y=value)) + geom_boxplot(aes(fill=class))
 p + facet_wrap( ~ variable, scales="free")
 ```
 >Malignant tumors have higher values, on the scale of 1 to 10, for all the features compared to benign tumors. 
+
+##### Mean Differences
+```{r}
+# Perform T-Test on Attributes Between Groups
+multi.tests <- function(fun = t.test, df, vars, group.var, ...) {
+  sapply(simplify = FALSE,                                   
+         vars,                                               
+         function(var) {
+           formula <- as.formula(paste(var, "~", group.var))
+           fun(data = df, formula, ...)                     
+         }
+  )
+}
+
+res.multi.t.tests <-
+  multi.tests(fun = t.test,
+              df = biopsy,
+              vars = c(names(biopsy[c(2:10)])),
+              group.var = "class",
+              var.equal = TRUE, na.rm=TRUE)
+
+p <-data.frame(p.value = sapply(res.multi.t.tests, getElement, name = "p.value"))
+p.value <-format.pval(pv = p, digits = 2, eps = 0.001, nsmall = 3)
+et <- t(data.frame(estimate = round(sapply(res.multi.t.tests, getElement, name = "estimate"),2)))
+ttest <- as.data.frame(cbind(et,p.value))
+datatable(ttest, autoHideNavigation="TRUE", options = list(columnDefs = list(list(className = 'dt-center', targets = "_all"))))
+```
+
 
 ## Unsupervised Learning Methods {.tabset}
 ### Principal Component Analysis {.tabset}
