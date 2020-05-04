@@ -12,7 +12,6 @@ output:
 knit: (function(input_file, encoding) {out_dir <- 'docs'; 
   rmarkdown::render(input_file, encoding=encoding, output_file=file.path(dirname(input_file), out_dir,'index.html'))})
 ---
-
 <center><div autosize class="content">
 <video autoplay autosize width = 100% muted loop id="myVideo">
   <source src="v.mp4" type="video/mp4">
@@ -656,7 +655,7 @@ datatable(IntVal, style="default",  height = "auto", width = "auto")
 ## Conclusion {.tabset}
 ***
 <style>
-div.blue { background-color:#e6f0ff; border-radius: 2px; padding: 2px;}
+div.blue { background-color:#e6f0ff; border-radius: 1px; padding: 1px;}
 </style>
 <div class = "blue">
 - The different methods produce different cluster memberships. 
