@@ -221,7 +221,7 @@ p <-data.frame(p.value = sapply(res.multi.t.tests, getElement, name = "p.value")
 p.value <-format.pval(pv = p, digits = 2, eps = 0.001, nsmall = 3)
 et <- t(data.frame(estimate = round(sapply(res.multi.t.tests, getElement, name = "estimate"),2)))
 ttest <- as.data.frame(cbind(et,p.value))
-datatable(ttest, autoHideNavigation="TRUE", options = list(columnDefs = list(list(className = 'dt-center', targets = "_all"))))
+datatable(ttest, autoHideNavigation="TRUE", options = list(dom='t', columnDefs = list(list(className = 'dt-center', targets = "_all"))))
 ```
 
 
