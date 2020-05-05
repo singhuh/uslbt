@@ -644,12 +644,11 @@ cshc1 <- cluster.stats(data.dist, biopsy.hclust.clusters)
 cshc2<-cluster.stats(data.dist, biopsy.hclust2.clusters)
 cskm <- cluster.stats(data.dist, biopsy.km$cluster)
 
-DI<-as.data.frame(list(cshc1$dunn, cshc2$dunn, cskm$dunn))
-IntVal <- data.frame("Dunn-Index" = c(cshc1$dunn, cshc2$dunn, cskm$dunn),
+IntVal <- round(data.frame("Dunn-Index" = c(cshc1$dunn, cshc2$dunn, cskm$dunn),
                  "Silhouette-Width" = c(cshc1$avg.silwidth, cshc2$avg.silwidth, cskm$avg.silwidth),
-                 "Separation-Index" = c(cshc1$sindex, cshc2$sindex, cskm$sindex ))
+                 "Separation-Index" = c(cshc1$sindex, cshc2$sindex, cskm$sindex )),3)
 row.names(IntVal) <- c("Hierarchical Clustering 'complete'", "Hierarchical Clustering 'mcquitty'", "K-Means")
-datatable(IntVal, style="default",  height = "auto", width = "auto")
+datatable(IntVal, style="default",  height = "auto", width = "auto", autoHideNavigation = TRUE)
 ```
 
 ## Conclusion {.tabset}
