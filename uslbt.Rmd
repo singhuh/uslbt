@@ -622,13 +622,13 @@ cluster_models <- as.data.frame(list(
         'Pr.Comp HClust.comp' = round(cmpc$overall, 3),
         'Pr.Comp HClust.mcquitty' = round(cmpc2$overall, 3)
         ))
-datatable(t(cluster_models))
+datatable(t(cluster_models), options = list(dom = 't'))
 ```
 <style>
 div.blue { background-color:#e6f0ff; border-radius: 2px; padding: 2px;}
 </style>
 <div class = "blue">
-* Based on external validation, the Hierarchical Clustering using `mcquitty` method was the most accurate model followed by K-Means clustering for clustering benign and malignant breast tumor samples.
+Based on external validation, the Hierarchical Clustering using `mcquitty` method was the most accurate model followed by K-Means clustering for clustering benign and malignant breast tumor samples.
 </div>
 
 ### Internal cluster validation 
@@ -648,8 +648,18 @@ IntVal <- round(data.frame("Dunn-Index" = c(cshc1$dunn, cshc2$dunn, cskm$dunn),
                  "Silhouette-Width" = c(cshc1$avg.silwidth, cshc2$avg.silwidth, cskm$avg.silwidth),
                  "Separation-Index" = c(cshc1$sindex, cshc2$sindex, cskm$sindex )),3)
 row.names(IntVal) <- c("Hierarchical Clustering 'complete'", "Hierarchical Clustering 'mcquitty'", "K-Means")
-datatable(IntVal, style="default",  height = "auto", width = "auto", autoHideNavigation = TRUE)
+datatable(IntVal, height = "auto", width = "auto", autoHideNavigation = TRUE, editable = TRUE,  options = list(dom = 't'))
 ```
+<style>
+div.blue { background-color:#e6f0ff; border-radius: 2px; padding: 2px;}
+</style><div class = "blue">
+In this dataset,<br>
+- Hierarchical clustering using `complete` method provided the highest **Dunn Index**;<br>
+- K-Means clustering provided the highest **Silhoutte Width**;<br>
+- Hierarchical clustering using `mcquitty` method provided the highest **Separation Index**;<br>
+**It is difficult to determine the best unsupervised model, based on internal validation, in this case**.
+
+</div>
 
 ## Conclusion {.tabset}
 ***
